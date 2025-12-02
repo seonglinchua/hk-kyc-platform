@@ -5,7 +5,7 @@ import {
   caseStorage,
   documentStorage,
   aiSummaryStorage,
-  sessionStorage,
+  authSession,
 } from './localStorage';
 
 // Initialize storage on module load
@@ -28,13 +28,24 @@ const delay = (ms = 100) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Auth API
 export const authAPI = {
-  login: async (email) => {
+  login: async (email, password) => {
     await delay(300);
+
+    // Validate input
+    if (!email || !password) {
+      throw new Error('Email and password are required');
+    }
 
     const user = userStorage.getByEmail(email);
 
     if (!user) {
-      throw new Error('Invalid email');
+      throw new Error('Invalid email or password');
+    }
+
+    // Verify password
+    const isPasswordValid = comparePasswords(password, user.password);
+    if (!isPasswordValid) {
+      throw new Error('Invalid email or password');
     }
 
     // Generate token
@@ -79,7 +90,7 @@ export const authAPI = {
   getCurrentUser: async () => {
     await delay(100);
 
-    const user = sessionStorage.getUser();
+    const user = authSession.getUser();
     if (!user) {
       throw new Error('Not authenticated');
     }
@@ -88,7 +99,7 @@ export const authAPI = {
   },
 
   logout: () => {
-    sessionStorage.clearSession();
+    authSession.clearSession();
     window.location.href = '/login';
   },
 };
@@ -98,7 +109,7 @@ export const caseAPI = {
   getCases: async (params = {}) => {
     await delay(200);
 
-    const currentUser = sessionStorage.getUser();
+    const currentUser = authSession.getUser();
     if (!currentUser) {
       throw new Error('Not authenticated');
     }
@@ -178,7 +189,7 @@ export const caseAPI = {
   createCase: async (caseData) => {
     await delay(300);
 
-    const currentUser = sessionStorage.getUser();
+    const currentUser = authSession.getUser();
     if (!currentUser) {
       throw new Error('Not authenticated');
     }
@@ -227,7 +238,7 @@ export const caseAPI = {
   updateCaseStatus: async (id, status) => {
     await delay(300);
 
-    const currentUser = sessionStorage.getUser();
+    const currentUser = authSession.getUser();
     if (!currentUser) {
       throw new Error('Not authenticated');
     }

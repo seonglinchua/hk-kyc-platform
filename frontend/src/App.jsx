@@ -7,8 +7,26 @@ import NewCasePage from './pages/NewCasePage';
 // Protected Route wrapper
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('token');
+  const userStr = localStorage.getItem('user');
 
-  if (!token) {
+  // Check if both token and user exist
+  if (!token || !userStr) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Validate user data can be parsed
+  try {
+    const user = JSON.parse(userStr);
+    if (!user || !user.id) {
+      // Invalid user data, clear and redirect
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      return <Navigate to="/login" replace />;
+    }
+  } catch (error) {
+    // Corrupted user data, clear and redirect
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     return <Navigate to="/login" replace />;
   }
 
