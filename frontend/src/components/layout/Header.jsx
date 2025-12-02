@@ -2,7 +2,20 @@ import { Link } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 
 export default function Header() {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  // Safely parse user data with error handling
+  let user = null;
+  try {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      user = JSON.parse(userStr);
+    }
+  } catch (error) {
+    console.error('Error parsing user data:', error);
+    // Clear corrupted data and redirect to login
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  }
 
   const handleLogout = () => {
     authAPI.logout();
@@ -41,8 +54,8 @@ export default function Header() {
 
             <div className="flex items-center space-x-3">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                <p className="text-xs text-gray-500">{user.email}</p>
+                <p className="text-sm font-medium text-gray-900">{user?.name || 'User'}</p>
+                <p className="text-xs text-gray-500">{user?.email || ''}</p>
               </div>
               <button
                 onClick={handleLogout}

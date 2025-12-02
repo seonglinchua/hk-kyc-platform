@@ -362,7 +362,8 @@ export const aiSummaryStorage = {
 };
 
 // Token and session management
-export const sessionStorage = {
+// Renamed from 'sessionStorage' to avoid collision with browser's sessionStorage API
+export const authSession = {
   setToken: (token) => localStorage.setItem(STORAGE_KEYS.TOKEN, token),
   getToken: () => localStorage.getItem(STORAGE_KEYS.TOKEN),
   removeToken: () => localStorage.removeItem(STORAGE_KEYS.TOKEN),
@@ -375,8 +376,8 @@ export const sessionStorage = {
   removeUser: () => localStorage.removeItem(STORAGE_KEYS.USER),
 
   clearSession: () => {
-    sessionStorage.removeToken();
-    sessionStorage.removeUser();
+    authSession.removeToken();
+    authSession.removeUser();
   },
 };
 
@@ -386,5 +387,5 @@ export default {
   caseStorage,
   documentStorage,
   aiSummaryStorage,
-  sessionStorage,
+  authSession,
 };

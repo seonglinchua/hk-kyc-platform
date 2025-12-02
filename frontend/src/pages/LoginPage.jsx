@@ -6,7 +6,8 @@ import LoadingSpinner from '../components/shared/LoadingSpinner';
 export default function LoginPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email: ''
+    email: '',
+    password: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,7 +26,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await authAPI.login(formData.email);
+      const response = await authAPI.login(formData.email, formData.password);
 
       // Store token and user data
       localStorage.setItem('token', response.token);
@@ -90,6 +91,23 @@ export default function LoginPage() {
                 placeholder="Enter your email"
               />
             </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={formData.password}
+                onChange={handleChange}
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+                placeholder="Enter your password"
+              />
+            </div>
           </div>
 
           <div>
@@ -104,7 +122,7 @@ export default function LoginPage() {
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              Demo email: admin@example.com
+              Demo credentials: admin@example.com / password123
             </p>
           </div>
         </form>
