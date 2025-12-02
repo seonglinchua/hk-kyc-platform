@@ -1,0 +1,199 @@
+{
+  "name": "KYC Analysis Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "kyc-analysis",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "kyc-analysis"
+    },
+    {
+      "parameters": {
+        "filePath": "={{ $json.screeningReport.filePath }}",
+        "options": {}
+      },
+      "id": "read-file",
+      "name": "Read PDF File",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "operation": "extractText",
+        "options": {}
+      },
+      "id": "extract-text",
+      "name": "Extract Text (OCR)",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "model": "={{ $env.OLLAMA_MODEL }}",
+        "prompt": "=You are a KYC analyst. Analyze this screening report and provide:\n\n1. Risk Score (1-5): Rate the overall risk where 1 is low and 5 is high\n2. Summary: Brief overview of the client (2-3 sentences)\n3. Red Flags: List any concerns (sanctions, PEP, adverse media, high-risk jurisdictions)\n4. Missing Information: What additional info is needed?\n5. Recommendation: Should we proceed with onboarding?\n\nScreening Report Text:\n{{ $json.text }}\n\nClient Details:\n- Name: {{ $('Webhook').item.json.clientName }}\n- Country: {{ $('Webhook').item.json.country }}\n- Business Type: {{ $('Webhook').item.json.businessType }}\n- Industry: {{ $('Webhook').item.json.industry }}\n- Source of Wealth: {{ $('Webhook').item.json.sourceOfWealth }}\n\nRespond in JSON format with these fields:\n{\n  \"riskScore\": <number 1-5>,\n  \"summary\": \"<string>\",\n  \"redFlags\": [\"<string>\", ...],\n  \"missingInfo\": [\"<string>\", ...],\n  \"recommendation\": \"<string>\"\n}",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "ollama",
+      "name": "Ollama AI Analysis",
+      "type": "n8n-nodes-base.ollama",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "mode": "jsonata",
+        "jsonataExpression": "$"
+      },
+      "id": "parse-json",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/api/webhook/n8n",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "caseId",
+              "value": "={{ $('Webhook').item.json.caseId }}"
+            },
+            {
+              "name": "riskScore",
+              "value": "={{ $json.riskScore }}"
+            },
+            {
+              "name": "summary",
+              "value": "={{ $json.summary }}"
+            },
+            {
+              "name": "redFlags",
+              "value": "={{ $json.redFlags }}"
+            },
+            {
+              "name": "missingInfo",
+              "value": "={{ $json.missingInfo }}"
+            },
+            {
+              "name": "recommendation",
+              "value": "={{ $json.recommendation }}"
+            },
+            {
+              "name": "modelUsed",
+              "value": "={{ $env.OLLAMA_MODEL }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-to-backend",
+      "name": "Send to Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Analysis completed\" } }}"
+      },
+      "id": "respond-to-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1450, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Read PDF File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read PDF File": {
+      "main": [
+        [
+          {
+            "node": "Extract Text (OCR)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text (OCR)": {
+      "main": [
+        [
+          {
+            "node": "Ollama AI Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama AI Analysis": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Send to Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to Backend": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1",
+  "id": "kyc-analysis-workflow",
+  "meta": {
+    "instanceId": "your-instance-id"
+  },
+  "tags": []
+}

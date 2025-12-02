@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: kyc-postgres
+    environment:
+      POSTGRES_USER: kyc_user
+      POSTGRES_PASSWORD: kyc_password
+      POSTGRES_DB: kyc_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - kyc-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kyc_user -d kyc_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend
+    container_name: kyc-backend
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: postgresql://kyc_user:kyc_password@postgres:5432/kyc_db
+      JWT_SECRET: your-secret-key-change-in-production
+      JWT_EXPIRES_IN: 7d
+      UPLOAD_DIR: /app/uploads
+      MAX_FILE_SIZE: 10485760
+      N8N_WEBHOOK_URL: http://n8n:5678/webhook/kyc-analysis
+      N8N_API_KEY: your-n8n-api-key
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: llama2
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - kyc-network
+    restart: unless-stopped
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/Dockerfile.frontend
+    container_name: kyc-frontend
+    environment:
+      VITE_API_URL: http://localhost:3000/api
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - kyc-network
+    restart: unless-stopped
+
+  # n8n Workflow Automation
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: kyc-n8n
+    environment:
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: admin
+      N8N_BASIC_AUTH_PASSWORD: admin
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://localhost:5678/
+      OLLAMA_MODEL: llama2
+      BACKEND_URL: http://backend:3000
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./backend/uploads:/data/uploads
+      - ./n8n-workflows:/workflows
+    depends_on:
+      - backend
+    networks:
+      - kyc-network
+    restart: unless-stopped
+
+  # Ollama (AI Model)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: kyc-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - kyc-network
+    restart: unless-stopped
+    # Note: You'll need to pull models after starting
+    # docker exec -it kyc-ollama ollama pull llama2
+
+networks:
+  kyc-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  n8n_data:
+  ollama_data:
