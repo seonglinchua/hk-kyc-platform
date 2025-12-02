@@ -1,0 +1,107 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  name      String
+  role      String   @default("user") // user, admin
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  cases     Case[]   @relation("RelationshipManager")
+}
+
+model Case {
+  id                  String    @id @default(uuid())
+  caseNumber          String    @unique @default(cuid())
+
+  // Client Information
+  clientType          String    // individual, corporate
+  clientName          String
+  dateOfBirth         DateTime?
+  dateOfIncorporation DateTime?
+  country             String
+  nationality         String?
+  businessType        String?
+  industry            String?
+  sourceOfWealth      String?   @db.Text
+
+  // Case Status
+  status              String    @default("pending") // pending, ai_ready, in_review, approved, rejected
+  riskScore           Int?      // 1-5
+
+  // Relationships
+  relationshipManager User      @relation("RelationshipManager", fields: [rmId], references: [id])
+  rmId                String
+
+  // AI Summary
+  aiSummary           AISummary?
+
+  // Documents
+  documents           Document[]
+
+  // Audit
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  approvedAt          DateTime?
+  rejectedAt          DateTime?
+  approvedBy          String?
+  rejectedBy          String?
+
+  @@index([status])
+  @@index([rmId])
+  @@index([createdAt])
+}
+
+model Document {
+  id           String   @id @default(uuid())
+
+  // Document Details
+  documentType String   // passport, br_cert, address_proof, screening_report, other
+  fileName     String
+  filePath     String
+  fileSize     Int
+  mimeType     String
+
+  // Metadata
+  uploadedAt   DateTime @default(now())
+
+  // Relationship
+  case         Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId       String
+
+  @@index([caseId])
+  @@index([documentType])
+}
+
+model AISummary {
+  id                String   @id @default(uuid())
+
+  // AI Analysis Results
+  riskScore         Int      // 1-5
+  summary           String   @db.Text
+  redFlags          String[] // Array of red flag strings
+  missingInfo       String[] // Array of missing information
+  recommendation    String   @db.Text
+
+  // Processing Details
+  processedAt       DateTime @default(now())
+  processingTime    Int?     // milliseconds
+  modelUsed         String?  // e.g., "llama2"
+
+  // Relationship
+  case              Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId            String   @unique
+
+  @@index([caseId])
+}
