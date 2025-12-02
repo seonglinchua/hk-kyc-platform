@@ -28,17 +28,13 @@ const delay = (ms = 100) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Auth API
 export const authAPI = {
-  login: async (email, password) => {
+  login: async (email) => {
     await delay(300);
 
     const user = userStorage.getByEmail(email);
 
     if (!user) {
-      throw new Error('Invalid email or password');
-    }
-
-    if (!comparePasswords(password, user.password)) {
-      throw new Error('Invalid email or password');
+      throw new Error('Invalid email');
     }
 
     // Generate token
