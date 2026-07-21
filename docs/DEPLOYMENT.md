@@ -2,6 +2,12 @@
 
 This guide covers deploying the Nezha KYC Orchestrator to production environments.
 
+> **Note:** This guide describes deploying the planned full-stack version
+> (backend, Postgres, n8n, Ollama), which lives under `future/` and is not yet wired
+> up to the frontend. The current MVP is a static frontend build — deploy it by
+> running `npm run build` in `frontend/` and serving the `dist/` folder (see
+> `.github/workflows/deploy-pages.yml` for the GitHub Pages example already in use).
+
 ## Pre-Deployment Checklist
 
 Before deploying to production, ensure you have:
@@ -40,8 +46,8 @@ cd hk-kyc-platform
 
 ```bash
 # Backend
-cp backend/.env.example backend/.env
-nano backend/.env
+cp future/backend/.env.example future/backend/.env
+nano future/backend/.env
 ```
 
 Update these critical values:
@@ -53,7 +59,7 @@ N8N_API_KEY=GENERATE_STRONG_API_KEY
 FRONTEND_URL=https://yourdomain.com
 ```
 
-3. **Update docker-compose.yml for production**
+3. **Update future/docker-compose.yml for production**
 
 ```yaml
 # Add SSL certificates volume mount
@@ -64,6 +70,7 @@ volumes:
 4. **Start services**
 
 ```bash
+cd future
 docker-compose up -d
 ```
 
@@ -101,7 +108,7 @@ sudo npm install -g pm2
 2. **Deploy backend**
 
 ```bash
-cd backend
+cd future/backend
 npm ci --production
 npx prisma generate
 npx prisma migrate deploy
@@ -427,7 +434,7 @@ If deployment fails:
 
 1. **Stop new services**
 ```bash
-docker-compose down
+cd future && docker-compose down
 # or
 pm2 stop all
 ```
@@ -467,7 +474,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /var/www/hk-kyc-platform
+            cd /var/www/hk-kyc-platform/future
             git pull
             docker-compose up -d --build
 ```

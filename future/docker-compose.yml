@@ -24,8 +24,8 @@ services:
   # Backend API
   backend:
     build:
-      context: ./backend
-      dockerfile: ../docker/Dockerfile.backend
+      context: ..
+      dockerfile: future/docker/Dockerfile.backend
     container_name: kyc-backend
     environment:
       PORT: 3000
@@ -54,8 +54,8 @@ services:
   # Frontend
   frontend:
     build:
-      context: ./frontend
-      dockerfile: ../docker/Dockerfile.frontend
+      context: ..
+      dockerfile: future/docker/Dockerfile.frontend
     container_name: kyc-frontend
     environment:
       VITE_API_URL: http://localhost:3000/api

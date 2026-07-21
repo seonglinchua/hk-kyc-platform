@@ -6,6 +6,20 @@ A streamlined KYC platform that automates client onboarding analysis using AI to
 
 ---
 
+## 🚦 Current Status
+
+**What actually runs today** is a standalone frontend (`frontend/`) that persists all
+data in the browser's `localStorage` — no backend, database, or n8n/Ollama setup
+required. See [`docs/LOCAL_STORAGE_MVP.md`](docs/LOCAL_STORAGE_MVP.md) for how it
+works and default login credentials.
+
+**Everything else described below** — the Node.js backend, PostgreSQL, n8n workflow
+automation, and Ollama AI integration — is the planned full-stack architecture. That
+code lives under [`future/`](future/) and is not currently wired up to the frontend.
+It's kept in the repo as a reference for when the platform grows beyond the MVP.
+
+---
+
 ## 🎯 What It Does (MVP Scope)
 
 **A simple KYC Case Dashboard where users can:**
@@ -127,72 +141,50 @@ Upload your Ingenique, Dow Jones, or Acuris screening report → Our system read
 
 ```
 hk-kyc-platform/
-├── frontend/                  # React frontend application
-│   ├── public/
+├── frontend/                  # React frontend — the MVP that actually runs today
+│   ├── index.html
 │   ├── src/
-│   │   ├── components/        # Reusable components
-│   │   │   ├── shared/
-│   │   │   │   ├── StatusBadge.jsx
-│   │   │   │   ├── FileUploadField.jsx
-│   │   │   │   └── ConfirmDialog.jsx
-│   │   │   ├── case/
-│   │   │   │   ├── CaseTable.jsx
-│   │   │   │   ├── DocumentList.jsx
-│   │   │   │   └── AISummaryCard.jsx
-│   │   │   └── layout/
-│   │   │       ├── AppLayout.jsx
-│   │   │       └── Header.jsx
-│   │   ├── pages/            # Page components
-│   │   │   ├── LoginPage.jsx
-│   │   │   ├── CaseListPage.jsx
-│   │   │   ├── CaseDetailPage.jsx
-│   │   │   └── NewCasePage.jsx
-│   │   ├── services/         # API services
-│   │   │   └── api.js
-│   │   ├── utils/            # Utility functions
+│   │   ├── components/
+│   │   │   ├── shared/        # StatusBadge, FileUploadField, ConfirmDialog, LoadingSpinner
+│   │   │   └── layout/        # AppLayout, Header
+│   │   ├── pages/             # LoginPage, CaseListPage, CaseDetailPage, NewCasePage
+│   │   ├── services/
+│   │   │   ├── api.js         # localStorage-backed API (see docs/LOCAL_STORAGE_MVP.md)
+│   │   │   └── localStorage.js
 │   │   ├── App.jsx
 │   │   └── main.jsx
 │   ├── package.json
 │   └── vite.config.js
 │
-├── backend/                   # Node.js backend API
-│   ├── src/
-│   │   ├── controllers/      # Route controllers
-│   │   │   ├── authController.js
-│   │   │   └── caseController.js
-│   │   ├── models/           # Database models
-│   │   │   ├── User.js
-│   │   │   ├── Case.js
-│   │   │   └── Document.js
-│   │   ├── routes/           # API routes
-│   │   │   ├── auth.js
-│   │   │   └── cases.js
-│   │   ├── middleware/       # Express middleware
-│   │   │   ├── auth.js
-│   │   │   └── upload.js
-│   │   ├── services/         # Business logic
-│   │   │   ├── n8nService.js
-│   │   │   └── fileService.js
-│   │   ├── config/           # Configuration
-│   │   │   └── database.js
-│   │   └── server.js         # Entry point
-│   ├── uploads/              # Uploaded files (local storage)
-│   ├── package.json
-│   └── .env.example
+├── future/                    # Planned full-stack architecture — not wired up yet
+│   ├── backend/                # Node.js/Express API (Prisma + SQLite/Postgres)
+│   │   ├── src/
+│   │   │   ├── controllers/    # authController.js, caseController.js, documentController.js
+│   │   │   ├── routes/         # auth.js, cases.js, documents.js, webhook.js
+│   │   │   ├── middleware/     # auth.js, upload.js
+│   │   │   ├── services/       # n8nService.js
+│   │   │   ├── config/         # database.js, initDb.js, seed.js
+│   │   │   └── server.js       # Entry point
+│   │   ├── prisma/schema.prisma
+│   │   ├── package.json
+│   │   └── .env.example
+│   ├── docker/
+│   │   ├── Dockerfile.frontend
+│   │   ├── Dockerfile.backend
+│   │   └── nginx.conf
+│   ├── docker-compose.yml
+│   └── n8n-workflows/           # n8n workflow definitions
+│       ├── kyc-analysis-workflow.json
+│       └── README.md
 │
-├── n8n-workflows/            # n8n workflow definitions
-│   ├── kyc-analysis-workflow.json
-│   └── README.md
+├── docs/                      # Documentation
+│   ├── LOCAL_STORAGE_MVP.md   # How the current frontend-only MVP works
+│   ├── API.md                 # Planned backend API (future/)
+│   ├── SETUP.md                # Full-stack setup (future/)
+│   └── DEPLOYMENT.md           # Full-stack deployment (future/)
 │
-├── docker/
-│   ├── Dockerfile.frontend
-│   ├── Dockerfile.backend
-│   └── docker-compose.yml
-│
-├── docs/                     # Documentation
-│   ├── API.md
-│   ├── SETUP.md
-│   └── DEPLOYMENT.md
+├── .github/workflows/
+│   └── deploy-pages.yml        # Builds frontend/ and deploys to GitHub Pages
 │
 ├── .gitignore
 ├── README.md
@@ -203,7 +195,30 @@ hk-kyc-platform/
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Run the MVP (frontend only)
+
+This is all you need today — no database, backend, or Docker required:
+
+```bash
+git clone https://github.com/your-org/hk-kyc-platform.git
+cd hk-kyc-platform/frontend
+npm install
+npm run dev  # Runs on http://localhost:5173
+```
+
+Login with `admin@example.com` / `password123` (see
+[`docs/LOCAL_STORAGE_MVP.md`](docs/LOCAL_STORAGE_MVP.md) for details and other seed
+accounts).
+
+---
+
+### Run the planned full-stack version (`future/`)
+
+The steps below spin up the Node.js backend, PostgreSQL, n8n, and Ollama from
+`future/`. This code isn't wired to the frontend yet — it's provided as a
+reference for the target architecture.
+
+#### Prerequisites
 - Node.js 18+ and npm/yarn
 - PostgreSQL 14+ (or MongoDB 6+)
 - Docker & Docker Compose
@@ -254,7 +269,7 @@ VITE_API_URL=http://localhost:3000/api
 
 **Backend**
 ```bash
-cd backend
+cd future/backend
 npm install
 ```
 
@@ -266,7 +281,7 @@ npm install
 
 #### 4. Set up database
 ```bash
-cd backend
+cd future/backend
 npx prisma migrate dev  # If using Prisma
 # OR
 npm run db:migrate      # If using custom migrations
@@ -291,7 +306,7 @@ docker run -d \
 
 **Backend**
 ```bash
-cd backend
+cd future/backend
 npm run dev  # Runs on http://localhost:3000
 ```
 
@@ -589,10 +604,28 @@ Perfect for showing HK SME prospects:
 
 ## 📦 Deployment
 
-### Docker Deployment (Recommended)
+### MVP Deployment (Current)
+
+The frontend is a static build with no server dependency — it's what
+[`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) deploys to
+GitHub Pages on every push to `main`:
 
 ```bash
-# Build and start all services
+cd frontend
+npm install
+npm run build
+# Serve 'dist' folder as a static site (GitHub Pages, Nginx, S3, etc.)
+```
+
+### Full-Stack Deployment (Planned, `future/`)
+
+The instructions below deploy the backend/Postgres/n8n/Ollama stack under `future/`.
+See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the full guide.
+
+#### Docker Deployment
+
+```bash
+cd future
 docker-compose up -d
 
 # Services:
@@ -603,11 +636,11 @@ docker-compose up -d
 # - Ollama: localhost:11434
 ```
 
-### Manual Deployment
+#### Manual Deployment
 
 **Backend:**
 ```bash
-cd backend
+cd future/backend
 npm install --production
 npm run build
 pm2 start dist/server.js --name kyc-backend
@@ -651,7 +684,7 @@ server {
 
 ```bash
 # Backend tests
-cd backend
+cd future/backend
 npm test
 
 # Frontend tests
@@ -666,10 +699,11 @@ npm run test:e2e
 
 ## 📚 Documentation
 
-- **API Documentation**: See [docs/API.md](docs/API.md)
-- **Setup Guide**: See [docs/SETUP.md](docs/SETUP.md)
-- **Deployment Guide**: See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
-- **n8n Workflows**: See [n8n-workflows/README.md](n8n-workflows/README.md)
+- **Local Storage MVP**: See [docs/LOCAL_STORAGE_MVP.md](docs/LOCAL_STORAGE_MVP.md) — how the app that runs today actually works
+- **API Documentation** (`future/`): See [docs/API.md](docs/API.md)
+- **Setup Guide** (`future/`): See [docs/SETUP.md](docs/SETUP.md)
+- **Deployment Guide** (`future/`): See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- **n8n Workflows** (`future/`): See [future/n8n-workflows/README.md](future/n8n-workflows/README.md)
 
 ---
 
