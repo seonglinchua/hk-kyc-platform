@@ -2,6 +2,12 @@
 
 This guide will help you set up the Nezha KYC Orchestrator on your local machine or server.
 
+> **Note:** The running MVP is the `frontend/` app on its own — it persists data in
+> browser `localStorage` and needs none of the steps below. See
+> [`docs/LOCAL_STORAGE_MVP.md`](LOCAL_STORAGE_MVP.md) to get started in under a minute.
+> Everything in this guide (backend, Postgres, n8n, Ollama) lives under `future/` and is
+> for the planned full-stack version — not required today.
+
 ## Prerequisites
 
 Before you begin, ensure you have the following installed:
@@ -30,13 +36,13 @@ Create `.env` files from the examples:
 
 ```bash
 # Backend
-cp backend/.env.example backend/.env
+cp future/backend/.env.example future/backend/.env
 
 # Frontend
 cp frontend/.env.example frontend/.env
 ```
 
-Edit `backend/.env` and update the following values:
+Edit `future/backend/.env` and update the following values:
 
 ```env
 JWT_SECRET=your-secure-random-secret-key
@@ -46,6 +52,7 @@ N8N_API_KEY=your-secure-n8n-api-key
 ### Step 3: Start All Services
 
 ```bash
+cd future
 docker-compose up -d
 ```
 
@@ -78,7 +85,7 @@ docker exec -it kyc-ollama ollama pull llama2
 1. Open n8n: `http://localhost:5678`
 2. Login with username: `admin`, password: `admin`
 3. Go to Workflows → Import from File
-4. Import `n8n-workflows/kyc-analysis-workflow.json`
+4. Import `future/n8n-workflows/kyc-analysis-workflow.json`
 5. Configure the workflow environment variables
 6. Activate the workflow
 
@@ -121,7 +128,7 @@ GRANT ALL PRIVILEGES ON DATABASE kyc_db TO kyc_user;
 ### Step 3: Set Up Backend
 
 ```bash
-cd backend
+cd future/backend
 
 # Install dependencies
 npm install
@@ -184,7 +191,7 @@ docker run -d \
   --name n8n \
   -p 5678:5678 \
   -v ~/.n8n:/home/node/.n8n \
-  -v $(pwd)/backend/uploads:/data/uploads \
+  -v $(pwd)/future/backend/uploads:/data/uploads \
   -e N8N_BASIC_AUTH_ACTIVE=true \
   -e N8N_BASIC_AUTH_USER=admin \
   -e N8N_BASIC_AUTH_PASSWORD=admin \
@@ -198,14 +205,14 @@ npm install -g n8n
 n8n
 ```
 
-Then import the workflow from `n8n-workflows/kyc-analysis-workflow.json`
+Then import the workflow from `future/n8n-workflows/kyc-analysis-workflow.json`
 
 ## Database Seeding
 
 To create a test user and some sample data:
 
 ```bash
-cd backend
+cd future/backend
 npm run db:seed
 ```
 
@@ -228,7 +235,7 @@ Should return: `{"status":"ok","timestamp":"..."}`
 ### 2. Check Database Connection
 
 ```bash
-cd backend
+cd future/backend
 npx prisma studio
 ```
 

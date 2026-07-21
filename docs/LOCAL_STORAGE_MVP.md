@@ -89,10 +89,13 @@ The application will run on `http://localhost:5173` (or next available port).
 
 ### Backend (Optional)
 
-The backend is **not required** for the MVP. If you want to run the full stack in the future:
+The backend is **not required** for the MVP. It lives under `future/backend/` as a
+reference for the planned full-stack architecture — see the root
+[README](../README.md#-current-status) and [docs/SETUP.md](SETUP.md). If you want to
+run it:
 
 ```bash
-cd backend
+cd future/backend
 npm install
 npm run dev
 ```

@@ -139,8 +139,8 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # Project specific
-backend/uploads/
-backend/dist/
+future/backend/uploads/
+future/backend/dist/
 frontend/dist/
 .DS_Store
 
@@ -148,5 +148,5 @@ frontend/dist/
 prisma/migrations/
 
 # SQLite database files
-backend/prisma/*.db
-backend/prisma/*.db-*
+future/backend/prisma/*.db
+future/backend/prisma/*.db-*

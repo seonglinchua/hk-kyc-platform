@@ -4,13 +4,13 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Copy package files
-COPY backend/package*.json ./
+COPY future/backend/package*.json ./
 
 # Install dependencies
 RUN npm ci --only=production
 
 # Copy application code
-COPY backend/ .
+COPY future/backend/ .
 
 # Generate Prisma Client
 RUN npx prisma generate
